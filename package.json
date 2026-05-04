@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "Projektzeiterfassung für Finanzfokus GmbH",
   "scripts": {
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "dev": "concurrently --names \"Backend,Frontend\" --prefix-colors \"cyan,magenta\" \"node server/index.js\" \"npm run client\"",
     "server": "node server/index.js",
-    "client": "cd client && npm run dev",
-    "install:all": "npm install && cd client && npm install"
+    "client": "npm --prefix client run dev",
+    "install:all": "npm install && npm --prefix client install"
   },
   "dependencies": {
     "better-sqlite3": "^9.4.3",

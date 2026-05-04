@@ -20,6 +20,10 @@ app.use('/api/projects/:projectId/pdf', pdfRouter);
 // Globale Eintrags-Routen (PUT/DELETE /api/entries/:id)
 app.use('/api/entries', entriesRouter);
 
+// Analyse-Routen
+const analyticsRouter = require('./routes/analytics');
+app.use('/api/analytics', analyticsRouter);
+
 // Import-Route
 app.post('/api/import', require('./routes/entries'));
 

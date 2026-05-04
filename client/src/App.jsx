@@ -3,6 +3,7 @@ import { Routes, Route, NavLink, useNavigate, useLocation } from 'react-router-d
 import Dashboard from './pages/Dashboard.jsx'
 import Projects from './pages/Projects.jsx'
 import ProjectDetail from './pages/ProjectDetail.jsx'
+import Kunden from './pages/Kunden.jsx'
 import ProjectModal from './components/ProjectModal.jsx'
 
 // Globaler Context für Jahr-Filter und Stopwatch-State
@@ -72,6 +73,12 @@ export default function App() {
                   : 'text-ff-dunkel-mid hover:text-white hover:bg-white/10'}`}>
                 Projekte
               </NavLink>
+              <NavLink to="/kunden" className={({ isActive }) =>
+                `px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${isActive
+                  ? 'bg-ff-blau text-white'
+                  : 'text-ff-dunkel-mid hover:text-white hover:bg-white/10'}`}>
+                Kunden & Analyse
+              </NavLink>
             </div>
 
             {/* Rechts: Jahr + Neues Projekt */}
@@ -108,6 +115,7 @@ export default function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/projekte" element={<Projects />} />
             <Route path="/projekte/:id" element={<ProjectDetail />} />
+            <Route path="/kunden" element={<Kunden />} />
           </Routes>
         </main>
       </div>
