@@ -1,0 +1,7 @@
+node_modules/
+client/node_modules/
+server/zeiterfassung.db
+.DS_Store
+dist/
+client/dist/
+*.log
