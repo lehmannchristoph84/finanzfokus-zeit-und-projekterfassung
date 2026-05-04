@@ -1,6 +1,8 @@
 node_modules/
 client/node_modules/
 server/zeiterfassung.db
+server/zeiterfassung.db-shm
+server/zeiterfassung.db-wal
 .DS_Store
 dist/
 client/dist/
