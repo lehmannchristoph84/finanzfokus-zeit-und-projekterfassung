@@ -36,7 +36,7 @@ export default function App() {
     return () => window.removeEventListener('beforeunload', handler)
   }, [activeTimer])
 
-  const years = [2024, 2025, 2026, 2027]
+  const years = Array.from({ length: 26 }, (_, i) => 2025 + i) // 2025–2050
   const isDetail = location.pathname.startsWith('/projekte/')
 
   return (

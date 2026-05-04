@@ -332,7 +332,7 @@ export default function Kunden() {
             onChange={e => setViewYear(Number(e.target.value))}
             className="input w-auto text-sm"
           >
-            {[2024, 2025, 2026, 2027].map(y => (
+            {Array.from({ length: 26 }, (_, i) => 2025 + i).map(y => (
               <option key={y} value={y}>{y}</option>
             ))}
           </select>

@@ -105,7 +105,7 @@ export default function ProjectModal({ onClose, onSaved, project }) {
             <div>
               <label className="label">Jahr</label>
               <select className="input" value={form.year} onChange={e => set('year', e.target.value)}>
-                {[2024, 2025, 2026, 2027].map(y => <option key={y} value={y}>{y}</option>)}
+                {Array.from({ length: 26 }, (_, i) => 2025 + i).map(y => <option key={y} value={y}>{y}</option>)}
               </select>
             </div>
             <div>
