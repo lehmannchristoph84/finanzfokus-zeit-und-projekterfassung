@@ -30,20 +30,28 @@ const STATUS_CONFIG = [
 
 export default function Dashboard() {
   const { year, refreshTick } = useApp()
-  const [projects, setProjects] = useState([])
+  const [allProjects, setAllProjects] = useState([])
   const [loading, setLoading] = useState(true)
-  const [activeStatus, setActiveStatus] = useState(null) // welche Karte ist offen
+  const [activeStatus, setActiveStatus] = useState(null)
   const navigate = useNavigate()
 
   useEffect(() => {
     setLoading(true)
-    fetch(`/api/projects?year=${year}`)
+    // Alle Projekte laden (ohne Jahresfilter) – Filterlogik im Frontend
+    fetch('/api/projects/all')
       .then(r => r.json())
-      .then(data => { setProjects(data); setLoading(false) })
+      .then(data => { setAllProjects(data); setLoading(false) })
       .catch(() => setLoading(false))
-  }, [year, refreshTick])
+  }, [refreshTick])
 
-  const byStatus = (s) => projects.filter(p => p.status === s)
+  // Offene / Rechnung gestellt: alle Jahre bis und mit dem gewählten Jahr (Übertrag)
+  // Bezahlt: nur das gewählte Jahr
+  const byStatus = (s) => {
+    if (s === 'bezahlt') {
+      return allProjects.filter(p => p.status === s && p.year === year)
+    }
+    return allProjects.filter(p => p.status === s && p.year <= year)
+  }
   const sumAmount = (ps) => ps.reduce((a, p) => a + (p.calculated_amount || 0), 0)
 
   function toggleStatus(status) {

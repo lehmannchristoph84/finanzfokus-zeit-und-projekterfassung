@@ -2,6 +2,28 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
+// Alle Projekte ohne Jahresfilter (für Dashboard-Übertrag)
+router.get('/all', (req, res) => {
+  const projects = db.prepare(`
+    SELECT
+      p.*,
+      COALESCE(SUM(CASE WHEN e.is_free = 0 THEN e.hours ELSE 0 END), 0) AS total_hours,
+      COALESCE(SUM(e.hours), 0) AS all_hours,
+      COUNT(e.id) AS entry_count,
+      MAX(e.entry_date) AS last_activity
+    FROM projects p
+    LEFT JOIN time_entries e ON e.project_id = p.id
+    GROUP BY p.id
+    ORDER BY p.created_at DESC
+  `).all();
+
+  const result = projects.map(p => ({
+    ...p,
+    calculated_amount: berechneRechnungsbetrag(p),
+  }));
+  res.json(result);
+});
+
 // Alle Projekte mit aggregierten Stunden/Betrag
 router.get('/', (req, res) => {
   const year = req.query.year || new Date().getFullYear();
