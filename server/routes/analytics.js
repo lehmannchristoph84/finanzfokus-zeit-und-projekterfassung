@@ -34,8 +34,11 @@ const PROJEKT_SUBQUERY = `
   GROUP BY p.id
 `;
 
-// ── API: Alle Kunden ───────────────────────────────────────────
+// ── API: Alle Kunden (optional nach Jahr filtern) ──────────────
 router.get('/clients', (req, res) => {
+  const { year } = req.query;
+  const whereClause = year ? `WHERE sub.year = ${parseInt(year)}` : '';
+
   const rows = db.prepare(`
     SELECT
       sub.client_name,
@@ -48,6 +51,7 @@ router.get('/clients', (req, res) => {
       GROUP_CONCAT(DISTINCT sub.year ORDER BY sub.year)     AS jahre,
       GROUP_CONCAT(DISTINCT sub.topic ORDER BY sub.topic)   AS themen
     FROM (${PROJEKT_SUBQUERY}) sub
+    ${whereClause}
     GROUP BY sub.client_name
     ORDER BY total_umsatz DESC
   `).all();

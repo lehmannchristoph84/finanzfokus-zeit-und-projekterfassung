@@ -80,6 +80,7 @@ export default function Kunden() {
   const { year } = useApp()
   const navigate = useNavigate()
 
+  const [alleJahre, setAlleJahre] = useState(false) // Toggle: dieses Jahr vs. alle Jahre
   const [clients, setClients] = useState([])
   const [monthly, setMonthly] = useState([])
   const [selectedClient, setSelectedClient] = useState(null)
@@ -87,11 +88,19 @@ export default function Kunden() {
   const [viewYear, setViewYear] = useState(year)
   const [loading, setLoading] = useState(true)
 
+  // Bei Jahr-Wechsel auch Monatsansicht synchronisieren
+  useEffect(() => { setViewYear(year) }, [year])
+
   useEffect(() => {
-    fetch('/api/analytics/clients')
+    setLoading(true)
+    setSelectedClient(null)
+    const url = alleJahre
+      ? '/api/analytics/clients'
+      : `/api/analytics/clients?year=${year}`
+    fetch(url)
       .then(r => r.json())
       .then(data => { setClients(data); setLoading(false) })
-  }, [])
+  }, [year, alleJahre])
 
   useEffect(() => {
     fetch(`/api/analytics/monthly/${viewYear}`)
@@ -119,19 +128,42 @@ export default function Kunden() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-ff-dunkel">Kunden & Analyse</h1>
-          <p className="text-ff-dunkel-mid text-sm mt-0.5">Gesamtübersicht aller Jahre</p>
+          <p className="text-ff-dunkel-mid text-sm mt-0.5">
+            {alleJahre ? 'Alle Jahre zusammen' : `Jahr ${year} · Jahres-Filter aus Navbar`}
+          </p>
         </div>
-        {/* PDF Kundenübersicht */}
-        <button
-          onClick={() => window.open('/api/analytics/clients/pdf', '_blank')}
-          className="btn-secondary flex items-center gap-2"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          Kundenübersicht PDF
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Toggle: dieses Jahr / alle Jahre */}
+          <div className="flex items-center bg-ff-blau-hell rounded-lg p-1 gap-1">
+            <button
+              onClick={() => setAlleJahre(false)}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                !alleJahre ? 'bg-ff-blau text-white shadow-sm' : 'text-ff-dunkel-mid hover:text-ff-dunkel'
+              }`}
+            >
+              {year}
+            </button>
+            <button
+              onClick={() => setAlleJahre(true)}
+              className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                alleJahre ? 'bg-ff-blau text-white shadow-sm' : 'text-ff-dunkel-mid hover:text-ff-dunkel'
+              }`}
+            >
+              Alle Jahre
+            </button>
+          </div>
+          {/* PDF Kundenübersicht */}
+          <button
+            onClick={() => window.open('/api/analytics/clients/pdf', '_blank')}
+            className="btn-secondary flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            Übersicht PDF
+          </button>
+        </div>
       </div>
 
       {/* Summary-Karten */}
@@ -155,14 +187,27 @@ export default function Kunden() {
         {/* KUNDENLISTE */}
         <div className="flex-1 card p-0 overflow-hidden">
           <div className="px-5 py-4 border-b border-ff-blau-hell">
-            <h2 className="font-semibold text-ff-dunkel">Alle Kunden</h2>
+            <h2 className="font-semibold text-ff-dunkel">
+              {alleJahre ? 'Alle Kunden (alle Jahre)' : `Kunden ${year}`}
+            </h2>
             <p className="text-xs text-ff-dunkel-mid mt-0.5">Klick auf Kunde → Jahresdetail + PDF</p>
           </div>
 
           {loading ? (
             <div className="p-8 text-center text-ff-dunkel-mid">Laden...</div>
           ) : clients.length === 0 ? (
-            <div className="p-8 text-center text-ff-dunkel-mid">Noch keine Kunden erfasst.</div>
+            <div className="p-8 text-center">
+              <p className="text-3xl mb-2">📭</p>
+              <p className="text-ff-dunkel font-medium">
+                {alleJahre ? 'Noch keine Kunden erfasst.' : `Keine Kunden in ${year}.`}
+              </p>
+              {!alleJahre && (
+                <button onClick={() => setAlleJahre(true)}
+                  className="text-ff-blau text-sm mt-2 hover:underline">
+                  Alle Jahre anzeigen →
+                </button>
+              )}
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
