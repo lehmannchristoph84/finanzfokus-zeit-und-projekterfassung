@@ -79,7 +79,8 @@ router.post('/import', upload.single('file'), (req, res) => {
   try {
     const workbook = XLSX.read(req.file.buffer, { type: 'buffer', cellDates: true });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+    // range:2 = Zeile 3 als Kopfzeile verwenden (0-indexiert)
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: '', range: 2 });
 
     const insertProject = db.prepare(`
       INSERT INTO projects (client_name, topic, hourly_rate, status, year)
@@ -92,43 +93,75 @@ router.post('/import', upload.single('file'), (req, res) => {
 
     let imported = 0;
     const projectCache = {};
+    let lastClientName = '';
+    let lastTopic = '';
+    let lastStatus = 'offen';
 
     const importAll = db.transaction(() => {
       for (const row of rows) {
-        const clientName = String(row['Kunde'] || row['client_name'] || '').trim();
-        const topic = String(row['Thema'] || row['topic'] || '').trim();
-        const description = String(row['Arbeit/Bemerkung'] || row['Bemerkung'] || row['description'] || '').trim();
+        // Kundenname wird nur in der ersten Zeile des Blocks eingetragen
+        const rawClient = String(row['Kunde / Name'] || row['Kunde'] || row['client_name'] || '').trim();
+        const rawTopic  = String(row['Thema'] || row['topic'] || '').trim();
+        if (rawClient) { lastClientName = rawClient; lastTopic = rawTopic; }
+        if (rawTopic)  { lastTopic = rawTopic; }
+
+        const clientName = lastClientName;
+        const topic      = lastTopic;
+        if (!clientName) continue;
+
+        const description = String(
+          row['Arbeit / Bemerkung'] || row['Arbeit/Bemerkung'] || row['Bemerkung'] || row['description'] || ''
+        ).trim();
         const hours = parseFloat(row['Stunden'] || row['hours'] || 0) || 0;
-        const channel = String(row['Kanal'] || row['channel'] || '').trim();
-        const hourlyRate = parseFloat(row['Stundensatz'] || 125) || 125;
-        const status = String(row['RechnungsStatus'] || 'offen').trim().toLowerCase();
-        let entryDate = row['Datum'] || null;
 
-        if (!clientName || !description) continue;
+        // Leere Zeilen oder Summenzeilen überspringen
+        if (!description || hours === 0) continue;
 
-        // Datum normalisieren
+        // Datum steht in Spalte "Kanal" (so hat der User seine Excel aufgebaut)
+        let entryDate = row['Kanal'] || row['Datum'] || null;
         if (entryDate instanceof Date) {
           entryDate = entryDate.toISOString().split('T')[0];
         } else if (entryDate) {
-          entryDate = String(entryDate).trim();
+          const s = String(entryDate).trim();
+          // Format DD.MM.YY oder DD.MM.YYYY
+          const m = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2,4})$/);
+          if (m) {
+            let y = m[3]; if (y.length === 2) y = '20' + y;
+            entryDate = `${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+          } else {
+            entryDate = s;
+          }
         }
+
+        // Jahr aus Datum ableiten
+        let year = new Date().getFullYear();
+        if (entryDate) { const d = new Date(entryDate); if (!isNaN(d)) year = d.getFullYear(); }
+
+        // Status aus der letzten Statusangabe im Block
+        const rawStatus = String(row['Rechnungs Status'] || row['RechnungsStatus'] || '').trim().toLowerCase();
+        if (rawStatus) lastStatus = rawStatus;
+
+        // is_free wenn Beschreibung "Kostenlos" enthält oder Total = 0
+        const total = parseFloat(row['Total'] || 0) || 0;
+        const is_free = (description.toLowerCase().includes('kostenlos') || (hours > 0 && total === 0)) ? 1 : 0;
+
+        const hourlyRate = 125;
 
         const key = `${clientName}|${topic}`;
         if (!projectCache[key]) {
           const existing = db.prepare(
             'SELECT id FROM projects WHERE client_name = ? AND topic = ?'
           ).get(clientName, topic);
-
           if (existing) {
             projectCache[key] = existing.id;
           } else {
             const p = insertProject.run(clientName, topic || null, hourlyRate,
-              mapStatus(status), new Date().getFullYear());
+              mapStatus(lastStatus), year);
             projectCache[key] = p.lastInsertRowid;
           }
         }
 
-        insertEntry.run(projectCache[key], entryDate, channel || null, description, hours, 0);
+        insertEntry.run(projectCache[key], entryDate || null, null, description, hours, is_free);
         imported++;
       }
     });
