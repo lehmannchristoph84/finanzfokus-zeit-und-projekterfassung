@@ -1,7 +1,9 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 
-const DB_PATH = path.join(__dirname, 'zeiterfassung.db');
+// DATA_DIR env var ermöglicht persistentes Volume auf Railway/Render
+const DATA_DIR = process.env.DATA_DIR || __dirname;
+const DB_PATH = path.join(DATA_DIR, 'zeiterfassung.db');
 const db = new Database(DB_PATH);
 
 // WAL-Modus für bessere Performance

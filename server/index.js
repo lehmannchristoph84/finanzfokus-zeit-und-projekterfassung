@@ -4,9 +4,15 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const isProd = process.env.NODE_ENV === 'production';
 
 app.use(cors());
 app.use(express.json());
+
+// In Production: gebautes React-Frontend ausliefern
+if (isProd) {
+  app.use(express.static(path.join(__dirname, '../client/dist')));
+}
 
 // Routen
 const projectsRouter = require('./routes/projects');
@@ -28,6 +34,13 @@ app.use('/api/analytics', analyticsRouter);
 app.post('/api/import', require('./routes/entries'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+
+// SPA Fallback: alle nicht-API Routen → index.html
+if (isProd) {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/dist/index.html'));
+  });
+}
 
 app.listen(PORT, () => {
   console.log(`Server läuft auf http://localhost:${PORT}`);
