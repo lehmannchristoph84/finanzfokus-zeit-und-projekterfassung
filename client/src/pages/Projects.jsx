@@ -164,13 +164,13 @@ export default function Projects() {
             <option value="rechnung_gestellt">Rechnung gestellt</option>
             <option value="bezahlt">Bezahlt</option>
           </select>
-          <input ref={fileRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
-          <button onClick={() => fileRef.current.click()} disabled={importing} className="btn-secondary flex items-center gap-1.5">
+          <label className={`btn-secondary flex items-center gap-1.5 cursor-pointer ${importing ? 'opacity-50 pointer-events-none' : ''}`}>
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
             </svg>
             {importing ? 'Importiert...' : 'Excel Import'}
-          </button>
+            <input type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} disabled={importing} />
+          </label>
         </div>
       </div>
 
