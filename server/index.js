@@ -16,7 +16,7 @@ if (isProd) {
 
 // Routen
 const projectsRouter = require('./routes/projects');
-const entriesRouter  = require('./routes/entries');
+const entriesRouter = require('./routes/entries');
 const pdfRouter      = require('./routes/pdf');
 
 app.use('/api/projects', projectsRouter);
@@ -31,7 +31,7 @@ const analyticsRouter = require('./routes/analytics');
 app.use('/api/analytics', analyticsRouter);
 
 // Import-Route
-app.post('/api/import', require('./routes/entries'));
+app.post('/api/import', (req, res, next) => { req.url = '/import'; entriesRouter(req, res, next); });
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
